@@ -5,6 +5,18 @@ namespace Sae;
 use Sae\Contracts\Storage;
 use Sae\Contracts\IdGenerator;
 
+/**
+ * Class Sae.
+ *
+ * The Services API Egine coordinates the interactions
+ * between data validation and manipulating the
+ * data appropriately.
+ *
+ * It supports this interactions for the http verbs:
+ * GET, POST, PUT, PATCH and DELETE.
+ *
+ * @package Sae
+ */
 class Sae
 {
   /**
@@ -27,14 +39,39 @@ class Sae
     $this->idGenerator = $id_generator;
   }
 
+  /**
+   * Get.
+   *
+   * @param string $id
+   *   The identifier for the data we are getting.
+   *
+   * @return string
+   *   The data.
+   *
+   * @throws \Exception
+   *   No data with the identifier was found.
+   */
   public function  get($id) {
     return $this->storage->retrieve($id);
   }
 
+  /**
+   * Post.
+   *
+   * @param string $json_data
+   *   The data as a json string.
+   *
+   * @return string
+   *   The identifier for the data.
+   *
+   * @throws \Exception
+   *   If the data is invalid, or could not be stored.
+   */
   public function post($json_data) {
 
-    if (!$this->validate($json_data)) {
-      return FALSE;
+    $validation_info = $this->validate($json_data);
+    if (!$validation_info['valid']) {
+      throw new \Exception(json_encode((object) $validation_info));
     }
 
     $id = Null;
@@ -42,7 +79,6 @@ class Sae
       $id = $this->idGenerator->generate();
     }
     return $this->storage->store($json_data, $id);
-
   }
 
   public function  put($id, $json_data) {
@@ -80,6 +116,6 @@ class Sae
 
     $is_valid = $validator->isValid();
 
-    return $is_valid;
+    return ['valid' => $is_valid, 'errors' => $validator->getErrors()];
   }
 }
