@@ -2,8 +2,7 @@
 
 class SaeTest extends \PHPUnit\Framework\TestCase
 {
-  public function test() {
-    $json_schema = '
+  private $jsonSchema = '
     {
        "$schema": "http://json-schema.org/draft-04/schema#",
        "title": "Product",
@@ -32,14 +31,26 @@ class SaeTest extends \PHPUnit\Framework\TestCase
        "required": ["id", "name", "price"]
     }
     ';
-    $engine = new Sae\Sae(new Memory(), $json_schema);
-    $engine->setIdGenerator(new Sequential());
+
+  private $engine;
+
+  protected function setUp() {
+    $this->engine = new Sae\Sae(new Memory(), $this->jsonSchema);
+    $this->engine->setIdGenerator(new Sequential());
+  }
+
+  public function test() {
+
+    $engine = $this->engine;
 
     // Can not retrieve what is not there.
     $this->assertFalse($engine->get(1));
 
-    // Can not post invalid data.
-    $this->assertFalse($engine->post("{}"));
+    // Can retriever an empty set.
+    $data = $engine->get();
+    $decoded = json_decode($data);
+    $this->assertEmpty($decoded);
+
 
     // Can post valid data.
     $json_object = '
@@ -51,8 +62,20 @@ class SaeTest extends \PHPUnit\Framework\TestCase
     ';
     $this->assertEquals(1, $engine->post($json_object));
 
+    $json_object2 = '
+    {
+      "id": 2, 
+      "name": "foe", 
+      "price": 2
+    }
+    ';
+    $this->assertEquals(2, $engine->post($json_object2));
+
     // Posted data can be retrieved.
-    $this->assertEquals($json_object, $engine->get(1));
+    $this->assertEquals($json_object2, $engine->get(2));
+
+    // Objects can be retrived in bulk.
+    $this->assertEquals("[". $json_object . "," . $json_object2 ."]", $engine->get());
 
     // PUT works.
     $json_object = '
@@ -87,11 +110,18 @@ class SaeTest extends \PHPUnit\Framework\TestCase
 
     // Confirm that DELETE worked by retrieving the object.
     $this->assertFalse($engine->get(1));
+  }
 
+  public function testPostException() {
+    $engine = $this->engine;
+
+    // Can not post invalid data.
+    $this->expectExceptionMessage("{\"valid\":false,\"errors\":[{\"property\":\"id\",\"pointer\":\"\/id\",\"message\":\"The property id is required\",\"constraint\":\"required\",\"context\":1},{\"property\":\"name\",\"pointer\":\"\/name\",\"message\":\"The property name is required\",\"constraint\":\"required\",\"context\":1},{\"property\":\"price\",\"pointer\":\"\/price\",\"message\":\"The property price is required\",\"constraint\":\"required\",\"context\":1}]}");
+    $this->assertFalse($engine->post("{}"));
   }
 }
 
-class Memory implements \Sae\Contracts\Storage {
+class Memory implements \Sae\Contracts\Storage, \Sae\Contracts\BulkRetriever {
   private $storage = [];
 
   public function retrieve($id)
@@ -100,6 +130,11 @@ class Memory implements \Sae\Contracts\Storage {
       return $this->storage[$id];
     }
     return FALSE;
+  }
+
+  public function retrieveAll()
+  {
+    return "[" . implode(",", $this->storage) . "]";
   }
 
   public function store($data, $id = NULL)

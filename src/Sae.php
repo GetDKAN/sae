@@ -2,6 +2,7 @@
 
 namespace Sae;
 
+use Sae\Contracts\BulkRetriever;
 use Sae\Contracts\Storage;
 use Sae\Contracts\IdGenerator;
 
@@ -49,10 +50,19 @@ class Sae
    *   The data.
    *
    * @throws \Exception
-   *   No data with the identifier was found.
+   *   No data with the identifier was found, or the storage
+   *   does not support bulk retrieval of data.
    */
-  public function  get($id) {
-    return $this->storage->retrieve($id);
+  public function  get($id = null) {
+    if (isset($id)) {
+      return $this->storage->retrieve($id);
+    }
+    else {
+      if ($this->storage instanceof BulkRetriever) {
+        return $this->storage->retrieveAll();
+      }
+
+    }
   }
 
   /**
