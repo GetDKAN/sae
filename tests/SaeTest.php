@@ -121,7 +121,7 @@ class SaeTest extends \PHPUnit\Framework\TestCase
   }
 }
 
-class Memory implements \Sae\Contracts\Storage, \Sae\Contracts\BulkRetriever {
+class Memory implements \Contracts\Storage, \Contracts\BulkRetriever {
   private $storage = [];
 
   public function retrieve($id)
@@ -157,7 +157,7 @@ class Memory implements \Sae\Contracts\Storage, \Sae\Contracts\BulkRetriever {
   }
 }
 
-class Sequential implements \Sae\Contracts\IdGenerator {
+class Sequential implements \Contracts\IdGenerator {
   private $id = 0;
   public function generate() {
     $this->id++;

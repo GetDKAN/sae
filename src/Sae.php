@@ -2,9 +2,9 @@
 
 namespace Sae;
 
-use Sae\Contracts\BulkRetriever;
-use Sae\Contracts\Storage;
-use Sae\Contracts\IdGenerator;
+use Contracts\BulkRetriever;
+use Contracts\Storage;
+use Contracts\IdGenerator;
 
 /**
  * Class Sae.
