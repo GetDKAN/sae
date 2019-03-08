@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace Sae;
 
 use Contracts\BulkRetriever;
@@ -31,7 +33,7 @@ class Sae
    */
   private $idGenerator;
 
-  public function __construct(Storage $storage, $json_schema) {
+  public function __construct(Storage $storage, string $json_schema) {
     $this->storage = $storage;
     $this->jsonSchema = $json_schema;
   }
@@ -46,14 +48,15 @@ class Sae
    * @param string $id
    *   The identifier for the data we are getting.
    *
-   * @return string
+   * @return string|array|NULL
    *   The data.
    *
    * @throws \Exception
    *   No data with the identifier was found, or the storage
    *   does not support bulk retrieval of data.
    */
-  public function  get($id = null) {
+  public function  get(string $id = null)
+  {
     if (isset($id)) {
       return $this->storage->retrieve($id);
     }
@@ -77,7 +80,7 @@ class Sae
    * @throws \Exception
    *   If the data is invalid, or could not be stored.
    */
-  public function post($json_data) {
+  public function post(string $json_data): string {
 
     $validation_info = $this->validate($json_data);
     if (!$validation_info['valid']) {
@@ -88,18 +91,18 @@ class Sae
     if ($this->idGenerator) {
       $id = $this->idGenerator->generate();
     }
-    return $this->storage->store($json_data, $id);
+    return $this->storage->store($json_data, "{$id}");
   }
 
-  public function  put($id, $json_data) {
+  public function  put(string $id, string $json_data) {
     if (!$this->validate($json_data)) {
       return FALSE;
     }
 
-    return $this->storage->store($json_data, $id);
+    return $this->storage->store($json_data, "{$id}");
   }
 
-  public function  patch($id, $json_data) {
+  public function  patch(string $id, string $json_data) {
     $json_data_original = $this->storage->retrieve($id);
     $data_original = (array) json_decode($json_data_original);
     $data = (array) json_decode($json_data);
@@ -114,11 +117,11 @@ class Sae
 
   }
 
-  public function  delete($id) {
+  public function  delete(string $id) {
     return $this->storage->remove($id);
   }
 
-  public function validate($json_data) {
+  public function validate(string $json_data) {
     $data = json_decode($json_data);
 
     $validator = new \JsonSchema\Validator;

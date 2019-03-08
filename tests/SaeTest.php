@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 class SaeTest extends \PHPUnit\Framework\TestCase
 {
   private $jsonSchema = '
@@ -44,23 +46,22 @@ class SaeTest extends \PHPUnit\Framework\TestCase
     $engine = $this->engine;
 
     // Can not retrieve what is not there.
-    $this->assertFalse($engine->get(1));
+    $this->assertNull($engine->get("1"));
 
-    // Can retriever an empty set.
+    // Can retrieve an empty set.
     $data = $engine->get();
-    $decoded = json_decode($data);
-    $this->assertEmpty($decoded);
+    $this->assertEmpty($data);
 
 
     // Can post valid data.
-    $json_object = '
+    $json_object1 = '
     {
       "id": 1, 
       "name": "friend", 
       "price": 20
     }
     ';
-    $this->assertEquals(1, $engine->post($json_object));
+    $this->assertEquals(1, $engine->post($json_object1));
 
     $json_object2 = '
     {
@@ -72,10 +73,15 @@ class SaeTest extends \PHPUnit\Framework\TestCase
     $this->assertEquals(2, $engine->post($json_object2));
 
     // Posted data can be retrieved.
-    $this->assertEquals($json_object2, $engine->get(2));
+    $this->assertEquals($json_object2, $engine->get("2"));
 
     // Objects can be retrived in bulk.
-    $this->assertEquals("[". $json_object . "," . $json_object2 ."]", $engine->get());
+    $counter = 1;
+    foreach ($engine->get() as $object) {
+      $object_name = "json_object{$counter}";
+      $this->assertEquals(${$object_name}, $object);
+      $counter++;
+    }
 
     // PUT works.
     $json_object = '
@@ -86,10 +92,10 @@ class SaeTest extends \PHPUnit\Framework\TestCase
     }
     ';
 
-    $this->assertTrue($engine->put(1, $json_object));
+    $this->assertEquals(1, $engine->put("1", $json_object));
 
     // Confirm that PUT worked by retrieving the new object.
-    $this->assertEquals($json_object, $engine->get(1));
+    $this->assertEquals($json_object, $engine->get("1"));
 
     // PATCH works.
     $json_object = '{"id":2,"name":"enemy","price":50}';
@@ -100,16 +106,16 @@ class SaeTest extends \PHPUnit\Framework\TestCase
     }
     ';
 
-    $this->assertTrue($engine->patch(1, $json_patch));
+    $this->assertEquals("1", $engine->patch("1", $json_patch));
 
     // Confirm that PATCH worked by retrieving the new object.
-    $this->assertEquals($json_object, $engine->get(1));
+    $this->assertEquals($json_object, $engine->get("1"));
 
     // DELETE works
-    $this->assertTrue($engine->delete(1));
+    $this->assertTrue($engine->delete("1"));
 
     // Confirm that DELETE worked by retrieving the object.
-    $this->assertFalse($engine->get(1));
+    $this->assertNull($engine->get("1"));
   }
 
   public function testPostException() {
@@ -124,30 +130,30 @@ class SaeTest extends \PHPUnit\Framework\TestCase
 class Memory implements \Contracts\Storage, \Contracts\BulkRetriever {
   private $storage = [];
 
-  public function retrieve($id)
+  public function retrieve(string $id): ?string
   {
     if (isset($this->storage[$id])) {
       return $this->storage[$id];
     }
-    return FALSE;
+    return NULL;
   }
 
-  public function retrieveAll()
+  public function retrieveAll(): array
   {
-    return "[" . implode(",", $this->storage) . "]";
+    return $this->storage;
   }
 
-  public function store($data, $id = NULL)
+  public function store(string $data, string $id = NULL): string
   {
     if (!isset($this->storage[$id])) {
       $this->storage[$id] = $data;
       return $id;
     }
     $this->storage[$id] = $data;
-    return TRUE;
+    return $id;
   }
 
-  public function remove($id)
+  public function remove(string $id)
   {
     if (isset($this->storage[$id])) {
       unset($this->storage[$id]);
