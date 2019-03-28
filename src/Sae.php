@@ -95,8 +95,9 @@ class Sae
   }
 
   public function  put(string $id, string $json_data) {
-    if (!$this->validate($json_data)) {
-      return FALSE;
+    $validation_info = $this->validate($json_data);
+    if (!$validation_info['valid']) {
+      throw new \Exception(json_encode((object) $validation_info));
     }
 
     return $this->storage->store($json_data, "{$id}");
