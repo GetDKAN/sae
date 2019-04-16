@@ -7,6 +7,7 @@ namespace Sae;
 use Contracts\BulkRetriever;
 use Contracts\Storage;
 use Contracts\IdGenerator;
+use Rs\Json\Merge\Patch;
 
 /**
  * Class Sae.
@@ -105,10 +106,14 @@ class Sae
 
   public function  patch(string $id, string $json_data) {
     $json_data_original = $this->storage->retrieve($id);
-    $data_original = (array) json_decode($json_data_original);
-    $data = (array) json_decode($json_data);
+    $data_original = json_decode($json_data_original);
+    $data = json_decode($json_data);
+    $patched = (new Patch())->apply(
+      $data_original,
+      $data
+    );
 
-    $new = json_encode((object) array_merge($data_original, $data));
+    $new = json_encode($patched);
 
     if (!$this->validate($new)) {
       return FALSE;
