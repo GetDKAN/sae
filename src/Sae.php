@@ -13,11 +13,11 @@ use Rs\Json\Merge\Patch;
 /**
  * Class Sae.
  *
- * The Services API Egine coordinates the interactions
+ * The Services API Engine coordinates the interactions
  * between data validation and manipulating the
  * data appropriately.
  *
- * It supports this interactions for the http verbs:
+ * It supports these interactions for the http verbs:
  * GET, POST, PUT, PATCH and DELETE.
  *
  * @package Sae
