@@ -4,32 +4,33 @@ declare(strict_types = 1);
 
 namespace Sae;
 
+use JsonSchema\Validator;
 use Contracts\BulkRetriever;
 use Contracts\Storage;
 use Contracts\IdGenerator;
+use Rs\Json\Merge\Patch;
 
 /**
  * Class Sae.
  *
- * The Services API Egine coordinates the interactions
+ * The Services API Engine coordinates the interactions
  * between data validation and manipulating the
  * data appropriately.
  *
- * It supports this interactions for the http verbs:
+ * It supports these interactions for the http verbs:
  * GET, POST, PUT, PATCH and DELETE.
  *
  * @package Sae
  */
-class Sae
-{
+class Sae {
   /**
-   * @var Storage
+   * @var \Contracts\Storage
    */
   private $storage;
   private $jsonSchema;
 
   /**
-   * @var IdGenerator
+   * @var \Contracts\IdGenerator
    */
   private $idGenerator;
 
@@ -48,15 +49,14 @@ class Sae
    * @param string $id
    *   The identifier for the data we are getting.
    *
-   * @return string|array|NULL
+   * @return string|array|null
    *   The data.
    *
    * @throws \Exception
    *   No data with the identifier was found, or the storage
    *   does not support bulk retrieval of data.
    */
-  public function  get(string $id = null)
-  {
+  public function get(string $id = NULL) {
     if (isset($id)) {
       return $this->storage->retrieve($id);
     }
@@ -87,14 +87,14 @@ class Sae
       throw new \Exception(json_encode((object) $validation_info));
     }
 
-    $id = Null;
+    $id = NULL;
     if ($this->idGenerator) {
       $id = $this->idGenerator->generate();
     }
     return $this->storage->store($json_data, "{$id}");
   }
 
-  public function  put(string $id, string $json_data) {
+  public function put(string $id, string $json_data) {
     $validation_info = $this->validate($json_data);
     if (!$validation_info['valid']) {
       throw new \Exception(json_encode((object) $validation_info));
@@ -103,12 +103,16 @@ class Sae
     return $this->storage->store($json_data, "{$id}");
   }
 
-  public function  patch(string $id, string $json_data) {
+  public function patch(string $id, string $json_data) {
     $json_data_original = $this->storage->retrieve($id);
-    $data_original = (array) json_decode($json_data_original);
-    $data = (array) json_decode($json_data);
+    $data_original = json_decode($json_data_original);
+    $data = json_decode($json_data);
+    $patched = (new Patch())->apply(
+      $data_original,
+      $data
+    );
 
-    $new = json_encode((object) array_merge($data_original, $data));
+    $new = json_encode($patched);
 
     if (!$this->validate($new)) {
       return FALSE;
@@ -118,18 +122,19 @@ class Sae
 
   }
 
-  public function  delete(string $id) {
+  public function delete(string $id) {
     return $this->storage->remove($id);
   }
 
   public function validate(string $json_data) {
     $data = json_decode($json_data);
 
-    $validator = new \JsonSchema\Validator;
+    $validator = new Validator();
     $validator->validate($data, json_decode($this->jsonSchema));
 
     $is_valid = $validator->isValid();
 
     return ['valid' => $is_valid, 'errors' => $validator->getErrors()];
   }
+
 }

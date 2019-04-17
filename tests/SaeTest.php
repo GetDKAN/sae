@@ -22,7 +22,23 @@ class SaeTest extends \PHPUnit\Framework\TestCase
              "description": "Name of the product",
              "type": "string"
           },
-        
+
+          "dimensions": {
+            "type": "object",
+            "properties": {
+              "length": {
+                "type": "number"
+              },
+              "width": {
+                "type": "number"
+              },
+              "height": {
+                "type": "number"
+              }
+            },
+            "required": [ "length", "width", "height" ]
+          },
+               
           "price": {
              "type": "number",
              "minimum": 0,
@@ -88,7 +104,12 @@ class SaeTest extends \PHPUnit\Framework\TestCase
     {
       "id": 2, 
       "name": "enemy", 
-      "price": 40
+      "price": 40,
+      "dimensions": {
+        "length": 5,
+        "width": 5,
+        "height": 8
+      }
     }
     ';
 
@@ -98,10 +119,13 @@ class SaeTest extends \PHPUnit\Framework\TestCase
     $this->assertEquals($json_object, $engine->get("1"));
 
     // PATCH works.
-    $json_object = '{"id":2,"name":"enemy","price":50}';
+    $json_object = '{"id":2,"name":"enemy","price":50,"dimensions":{"length":10,"width":5,"height":8}}';
 
     $json_patch = '
     { 
+      "dimensions": {
+        "length": 10
+      },
       "price": 50
     }
     ';
@@ -166,7 +190,6 @@ class Memory implements \Contracts\Storage, \Contracts\BulkRetriever {
 class Sequential implements \Contracts\IdGenerator {
   private $id = 0;
   public function generate() {
-    $this->id++;
-    return $this->id;
+    return ++$this->id;
   }
 }
