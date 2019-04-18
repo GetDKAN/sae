@@ -36,7 +36,7 @@ class SaeTest extends \PHPUnit\Framework\TestCase
                 "type": "number"
               }
             },
-            "required": [ "length", "width", "height" ]
+            "required": [ "length", "width" ]
           },
                
           "price": {
@@ -50,104 +50,155 @@ class SaeTest extends \PHPUnit\Framework\TestCase
     }
     ';
 
+  private $defaultJson = '{
+      "id": 1,
+      "name": "First Product",
+      "dimensions": {
+        "length": 1,
+        "width": 2.0,
+        "height": 3e0
+      },
+      "price": 4.99
+    }';
+
   private $engine;
 
   protected function setUp() {
     $this->engine = new Sae\Sae(new Memory(), $this->jsonSchema);
     $this->engine->setIdGenerator(new Sequential());
+
+    // Start each test with a single product.
+    $this->engine->post($this->defaultJson);
   }
 
-  public function test() {
+  public function testCannotGetMissingData() {
+    $this->assertNull($this->engine->get("2"));
+  }
 
-    $engine = $this->engine;
+  public function testCanGetValidData() {
+    $this->assertEquals($this->defaultJson, $this->engine->get("1"));
+  }
 
-    // Can not retrieve what is not there.
-    $this->assertNull($engine->get("1"));
+  public function testCanGetDataInBulk() {
+    $json_object1 = $this->engine->get("1");
 
-    // Can retrieve an empty set.
-    $data = $engine->get();
-    $this->assertEmpty($data);
+    $json_object2 = '{
+      "id": 2,
+      "name": "Product Two",
+      "dimensions": {
+        "length": 2,
+        "width": 2
+      },
+      "price": 22.0
+    }';
+    $this->assertEquals(2, $this->engine->post($json_object2));
 
-
-    // Can post valid data.
-    $json_object1 = '
-    {
-      "id": 1, 
-      "name": "friend", 
-      "price": 20
-    }
-    ';
-    $this->assertEquals(1, $engine->post($json_object1));
-
-    $json_object2 = '
-    {
-      "id": 2, 
-      "name": "foe", 
-      "price": 2
-    }
-    ';
-    $this->assertEquals(2, $engine->post($json_object2));
-
-    // Posted data can be retrieved.
-    $this->assertEquals($json_object2, $engine->get("2"));
-
-    // Objects can be retrived in bulk.
     $counter = 1;
-    foreach ($engine->get() as $object) {
+    foreach ($this->engine->get() as $object) {
       $object_name = "json_object{$counter}";
       $this->assertEquals(${$object_name}, $object);
       $counter++;
     }
-
-    // PUT works.
-    $json_object = '
-    {
-      "id": 2, 
-      "name": "enemy", 
-      "price": 40,
-      "dimensions": {
-        "length": 5,
-        "width": 5,
-        "height": 8
-      }
-    }
-    ';
-
-    $this->assertEquals(1, $engine->put("1", $json_object));
-
-    // Confirm that PUT worked by retrieving the new object.
-    $this->assertEquals($json_object, $engine->get("1"));
-
-    // PATCH works.
-    $json_object = '{"id":2,"name":"enemy","price":50,"dimensions":{"length":10,"width":5,"height":8}}';
-
-    $json_patch = '
-    { 
-      "dimensions": {
-        "length": 10
-      },
-      "price": 50
-    }
-    ';
-
-    $this->assertEquals("1", $engine->patch("1", $json_patch));
-
-    // Confirm that PATCH worked by retrieving the new object.
-    $this->assertEquals($json_object, $engine->get("1"));
-
-    // DELETE works
-    $this->assertTrue($engine->delete("1"));
-
-    // Confirm that DELETE worked by retrieving the object.
-    $this->assertNull($engine->get("1"));
   }
 
-  public function testPostException() {
-    $engine = $this->engine;
+  public function testCanGetAnEmptySet() {
+    // Remove item from setUp() before testing for empty set.
+    $this->engine->delete("1");
+    $data = $this->engine->get();
+    $this->assertEmpty($data);
+  }
 
-    // Can not post invalid data.
-    $this->expectExceptionMessage("{\"valid\":false,\"errors\":[{\"property\":\"id\",\"pointer\":\"\/id\",\"message\":\"The property id is required\",\"constraint\":\"required\",\"context\":1},{\"property\":\"name\",\"pointer\":\"\/name\",\"message\":\"The property name is required\",\"constraint\":\"required\",\"context\":1},{\"property\":\"price\",\"pointer\":\"\/price\",\"message\":\"The property price is required\",\"constraint\":\"required\",\"context\":1}]}");
-    $this->assertFalse($engine->post("{}"));
+  public function testCanPostValidData() {
+    // Verify item from setUp().
+    $this->assertEquals($this->defaultJson, $this->engine->get("1"));
+    // Create and verify a second item.
+    $json_post = '{
+      "id": 2,
+      "name": "Product Two",
+      "price": 5.50
+    }';
+    $this->assertEquals(2, $this->engine->post($json_post));
+    $this->assertEquals($json_post, $this->engine->get("2"));
+  }
+
+  public function testCannotPostInvalidData() {
+    $this->expectExceptionMessage('{"valid":false,"errors":[{"property":"id","pointer":"\/id","message":"The property id is required","constraint":"required","context":1},{"property":"name","pointer":"\/name","message":"The property name is required","constraint":"required","context":1},{"property":"price","pointer":"\/price","message":"The property price is required","constraint":"required","context":1}]}');
+    $this->assertFalse($this->engine->post("{}"));
+  }
+
+  public function testCanPutToReplaceValidData() {
+    $json_put = '{
+      "id": 1,
+      "name": "First Product Updated by PUT",
+      "price": 9.99
+    }';
+    $this->assertEquals(1, $this->engine->put("1", $json_put));
+    // Confirm that PUT worked by retrieving the new object.
+    $this->assertEquals($json_put, $this->engine->get("1"));
+  }
+
+  public function testCanPutToCreateMissingData() {
+    $json_put = '{
+      "id": 2,
+      "name": "Second Product, created by PUT",
+      "price": 9.99
+    }';
+    $this->assertEquals(2, $this->engine->put("2", $json_put));
+    // Confirm that PUT worked by retrieving the new object.
+    $this->assertEquals($json_put, $this->engine->get("2"));
+  }
+
+  public function testCannotPutWithInvalidPayload() {
+    $invalid_json = '{
+      "name": "Product missing required properties id and price"
+    }';
+    $this->expectExceptionMessage('{"valid":false,"errors":[{"property":"id","pointer":"\/id","message":"The property id is required","constraint":"required","context":1},{"property":"price","pointer":"\/price","message":"The property price is required","constraint":"required","context":1}]}');
+    $this->assertFalse($this->engine->put("1", $invalid_json));
+  }
+
+  public function testCanPatchToModifyData() {
+    $json_patch = '{
+      "name": "First Product, updated by PATCH",
+      "dimensions": {
+        "length": 1,
+        "width": 5.0,
+        "height": null
+      }
+    }';
+    $this->assertEquals("1", $this->engine->patch("1", $json_patch));
+    // Confirm that PATCH worked by retrieving the udpated object.
+    $json_result = '{
+      "id": 1,
+      "name": "First Product, updated by PATCH",
+      "dimensions": {
+        "length": 1,
+        "width": 5
+      },
+      "price": 4.99
+    }';
+    $this->assertEquals(
+      json_encode(json_decode($json_result)),
+      $this->engine->get("1")
+    );
+  }
+
+  public function testCannotPatchMissingData() {
+    $json_patch = '{
+      "id": 2,
+      "name": "Non-existent Product",
+      "price": 22.0
+    }';
+    $this->assertFalse($this->engine->patch("2", $json_patch));
+  }
+
+  public function testCanDeleteValidData() {
+    $this->assertTrue($this->engine->delete("1"));
+    // Confirm DELETE worked by not retrieving the object.
+    $this->assertNull($this->engine->get("1"));
+  }
+
+  public function testCannotDeleteMissingData() {
+    $this->assertFalse($this->engine->delete("3"));
   }
 }
 

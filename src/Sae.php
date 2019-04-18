@@ -64,7 +64,6 @@ class Sae {
       if ($this->storage instanceof BulkRetriever) {
         return $this->storage->retrieveAll();
       }
-
     }
   }
 
@@ -94,6 +93,21 @@ class Sae {
     return $this->storage->store($json_data, "{$id}");
   }
 
+  /**
+   * Put.
+   *
+   * @param string $id
+   *   The identifier for the data we are getting.
+   *
+   * @param string $json_data
+   *   The data as a json string.
+   *
+   * @return string|array|null
+   *   The data.
+   *
+   * @throws \Exception
+   *   If the data is invalid, or could not be stored.
+   */
   public function put(string $id, string $json_data) {
     $validation_info = $this->validate($json_data);
     if (!$validation_info['valid']) {
@@ -103,8 +117,27 @@ class Sae {
     return $this->storage->store($json_data, "{$id}");
   }
 
+  /**
+   * Patch.
+   *
+   * @param string $id
+   *   The identifier for the data we are getting.
+   *
+   * @param string $json_data
+   *   The data as a json string.
+   *
+   * @return string|array|null
+   *   The data.
+   *
+   * @throws \Exception
+   *   If the data is invalid, or could not be stored.
+   */
   public function patch(string $id, string $json_data) {
     $json_data_original = $this->storage->retrieve($id);
+    if (!$json_data_original) {
+      return FALSE;
+    }
+
     $data_original = json_decode($json_data_original);
     $data = json_decode($json_data);
     $patched = (new Patch())->apply(
@@ -118,14 +151,31 @@ class Sae {
       return FALSE;
     }
 
-    return $this->storage->store($new, $id);
-
+    return $this->storage->store($new, "{$id}");
   }
 
+  /**
+   * Delete.
+   *
+   * @param string $id
+   *   The identifier for the data we are getting.
+   *
+   * @return bool
+   *   True if the identifier was found and delete, false otherwise.
+   */
   public function delete(string $id) {
     return $this->storage->remove($id);
   }
 
+  /**
+   * Validate.
+   *
+   * @param string $json_data
+   *   The data as a json string.
+   *
+   * @return array
+   *   The validation result.
+   */
   public function validate(string $json_data) {
     $data = json_decode($json_data);
 
