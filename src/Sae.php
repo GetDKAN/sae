@@ -60,10 +60,13 @@ class Sae {
     if (isset($id)) {
       return $this->storage->retrieve($id);
     }
-    else {
-      if ($this->storage instanceof BulkRetriever) {
+    elseif ($this->storage instanceof BulkRetriever) {
         return $this->storage->retrieveAll();
-      }
+    }
+    else {
+      throw new \Exception(
+        'Neither data for the id, nor storage supporting bulk retrieval found.'
+      );
     }
   }
 
