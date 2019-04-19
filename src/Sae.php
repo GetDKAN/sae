@@ -147,8 +147,9 @@ class Sae {
 
     $new = json_encode($patched);
 
-    if (!$this->validate($new)) {
-      return FALSE;
+    $validation_info = $this->validate($new);
+    if (!$validation_info['valid']) {
+      throw new \Exception(json_encode((object) $validation_info));
     }
 
     return $this->storage->store($new, "{$id}");

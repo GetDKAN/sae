@@ -182,6 +182,17 @@ class SaeTest extends \PHPUnit\Framework\TestCase
     );
   }
 
+  public function testCannotPatchResultingInInvalidData() {
+    // Remove price, a required property.
+    $json_patch = '{
+      "price": null
+    }';
+    $this->expectExceptionMessage('{"valid":false,"errors":[{"property":"price","pointer":"\/price","message":"The property price is required","constraint":"required","context":1}]}');
+    $this->engine->patch("1", $json_patch);
+    // Confirm that the PATCH target remained unchanged.
+    $this->assertEquals($this->defaultJson, $this->engine->get("1"));
+  }
+
   public function testCannotPatchMissingData() {
     $json_patch = '{
       "id": 2,
