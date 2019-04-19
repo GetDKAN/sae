@@ -101,6 +101,12 @@ class SaeTest extends \PHPUnit\Framework\TestCase
     }
   }
 
+  public function testCannotGetBulkFromUnsupportedStorage() {
+    $unsupported_storage_engine = new Sae\Sae(new UnsupportedMemory(), $this->jsonSchema);
+    $this->expectExceptionMessage('Neither data for the id, nor storage supporting bulk retrieval found.');
+    $data = $unsupported_storage_engine->get();
+  }
+
   public function testCanGetAnEmptySet() {
     // Remove item from setUp() before testing for empty set.
     $this->engine->delete("1");
@@ -182,6 +188,15 @@ class SaeTest extends \PHPUnit\Framework\TestCase
     );
   }
 
+  public function testCannotPatchResultingInInvalidData() {
+    // Remove price, a required property.
+    $json_patch = '{
+      "price": null
+    }';
+    $this->expectExceptionMessage('{"valid":false,"errors":[{"property":"price","pointer":"\/price","message":"The property price is required","constraint":"required","context":1}]}');
+    $this->engine->patch("1", $json_patch);
+  }
+
   public function testCannotPatchMissingData() {
     $json_patch = '{
       "id": 2,
@@ -202,7 +217,7 @@ class SaeTest extends \PHPUnit\Framework\TestCase
   }
 }
 
-class Memory implements \Contracts\Storage, \Contracts\BulkRetriever {
+class UnsupportedMemory implements \Contracts\Storage {
   private $storage = [];
 
   public function retrieve(string $id): ?string
@@ -211,11 +226,6 @@ class Memory implements \Contracts\Storage, \Contracts\BulkRetriever {
       return $this->storage[$id];
     }
     return NULL;
-  }
-
-  public function retrieveAll(): array
-  {
-    return $this->storage;
   }
 
   public function store(string $data, string $id = NULL): string
@@ -236,6 +246,16 @@ class Memory implements \Contracts\Storage, \Contracts\BulkRetriever {
     }
     return FALSE;
   }
+}
+
+class Memory extends UnsupportedMemory implements \Contracts\BulkRetriever {
+
+  private $storage = [];
+
+  public function retrieveAll(): array {
+    return $this->storage;
+  }
+
 }
 
 class Sequential implements \Contracts\IdGenerator {

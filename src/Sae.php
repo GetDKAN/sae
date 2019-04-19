@@ -60,10 +60,13 @@ class Sae {
     if (isset($id)) {
       return $this->storage->retrieve($id);
     }
-    else {
-      if ($this->storage instanceof BulkRetriever) {
+    elseif ($this->storage instanceof BulkRetriever) {
         return $this->storage->retrieveAll();
-      }
+    }
+    else {
+      throw new \Exception(
+        'Neither data for the id, nor storage supporting bulk retrieval found.'
+      );
     }
   }
 
@@ -147,8 +150,9 @@ class Sae {
 
     $new = json_encode($patched);
 
-    if (!$this->validate($new)) {
-      return FALSE;
+    $validation_info = $this->validate($new);
+    if (!$validation_info['valid']) {
+      throw new \Exception(json_encode((object) $validation_info));
     }
 
     return $this->storage->store($new, "{$id}");
