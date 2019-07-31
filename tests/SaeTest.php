@@ -217,7 +217,7 @@ class SaeTest extends \PHPUnit\Framework\TestCase
   }
 }
 
-class UnsupportedMemory implements \Contracts\Storage {
+class UnsupportedMemory implements \Contracts\StorageInterface {
   private $storage = [];
 
   public function retrieve(string $id): ?string
@@ -248,7 +248,7 @@ class UnsupportedMemory implements \Contracts\Storage {
   }
 }
 
-class Memory extends UnsupportedMemory implements \Contracts\BulkRetriever {
+class Memory extends UnsupportedMemory implements \Contracts\BulkRetrieverInterface {
 
   private $storage = [];
 
