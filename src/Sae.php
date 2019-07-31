@@ -5,9 +5,10 @@ declare(strict_types = 1);
 namespace Sae;
 
 use JsonSchema\Validator;
-use Contracts\BulkRetriever;
-use Contracts\Storage;
-use Contracts\IdGenerator;
+use Contracts\BulkRetrieverInterface;
+use Contracts\StorerInterface;
+use Contracts\RemoverInterface;
+use Contracts\IdGeneratorInterface;
 use Rs\Json\Merge\Patch;
 
 /**
@@ -25,7 +26,7 @@ use Rs\Json\Merge\Patch;
 class Sae
 {
   /**
-   * @var \Contracts\Storage
+   * @var \Contracts\StorerInterface
    */
     private $storage;
     private $jsonSchema;
@@ -35,13 +36,13 @@ class Sae
    */
     private $idGenerator;
 
-    public function __construct(Storage $storage, string $json_schema)
+    public function __construct(StorerInterface $storage, string $json_schema)
     {
         $this->storage = $storage;
         $this->jsonSchema = $json_schema;
     }
 
-    public function setIdGenerator(IdGenerator $id_generator)
+    public function setIdGenerator(IdGeneratorInterface $id_generator)
     {
         $this->idGenerator = $id_generator;
     }
@@ -63,7 +64,7 @@ class Sae
     {
         if (isset($id)) {
             return $this->storage->retrieve($id);
-        } elseif ($this->storage instanceof BulkRetriever) {
+        } elseif ($this->storage instanceof BulkRetrieverInterface) {
             return $this->storage->retrieveAll();
         } else {
             throw new \Exception(

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace SaeTest;
 
+use \Sae\Sae;
+
 class SaeTest extends \PHPUnit\Framework\TestCase
 {
     private $jsonSchema = '
@@ -67,7 +69,7 @@ class SaeTest extends \PHPUnit\Framework\TestCase
 
     protected function setUp()
     {
-        $this->engine = new Sae\Sae(new Memory(), $this->jsonSchema);
+        $this->engine = new Sae(new Memory(), $this->jsonSchema);
         $this->engine->setIdGenerator(new Sequential());
 
       // Start each test with a single product.
@@ -109,7 +111,7 @@ class SaeTest extends \PHPUnit\Framework\TestCase
 
     public function testCannotGetBulkFromUnsupportedStorage()
     {
-        $unsupported_storage_engine = new Sae\Sae(new UnsupportedMemory(), $this->jsonSchema);
+        $unsupported_storage_engine = new Sae(new UnsupportedMemory(), $this->jsonSchema);
         $this->expectExceptionMessage('Neither data for the id, nor storage supporting bulk retrieval found.');
         $data = $unsupported_storage_engine->get();
     }

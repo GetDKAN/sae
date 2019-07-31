@@ -2,9 +2,10 @@
 
 namespace SaeTest;
 
-use Contracts\StorageInterface;
+use Contracts\StorerInterface;
+use Contracts\RemoverInterface;
 
-class UnsupportedMemory implements StorageInterface
+class UnsupportedMemory implements StorerInterface, RemoverInterface
 {
     private $storage = [];
 
