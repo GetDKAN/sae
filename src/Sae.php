@@ -5,9 +5,10 @@ declare(strict_types = 1);
 namespace Sae;
 
 use JsonSchema\Validator;
-use Contracts\BulkRetriever;
-use Contracts\Storage;
-use Contracts\IdGenerator;
+use Contracts\BulkRetrieverInterface;
+use Contracts\StorerInterface;
+use Contracts\RemoverInterface;
+use Contracts\IdGeneratorInterface;
 use Rs\Json\Merge\Patch;
 
 /**
@@ -22,26 +23,29 @@ use Rs\Json\Merge\Patch;
  *
  * @package Sae
  */
-class Sae {
+class Sae
+{
   /**
-   * @var \Contracts\Storage
+   * @var \Contracts\StorerInterface
    */
-  private $storage;
-  private $jsonSchema;
+    private $storage;
+    private $jsonSchema;
 
   /**
    * @var \Contracts\IdGenerator
    */
-  private $idGenerator;
+    private $idGenerator;
 
-  public function __construct(Storage $storage, string $json_schema) {
-    $this->storage = $storage;
-    $this->jsonSchema = $json_schema;
-  }
+    public function __construct(StorerInterface $storage, string $json_schema)
+    {
+        $this->storage = $storage;
+        $this->jsonSchema = $json_schema;
+    }
 
-  public function setIdGenerator(IdGenerator $id_generator) {
-    $this->idGenerator = $id_generator;
-  }
+    public function setIdGenerator(IdGeneratorInterface $id_generator)
+    {
+        $this->idGenerator = $id_generator;
+    }
 
   /**
    * Get.
@@ -56,19 +60,18 @@ class Sae {
    *   No data with the identifier was found, or the storage
    *   does not support bulk retrieval of data.
    */
-  public function get(string $id = NULL) {
-    if (isset($id)) {
-      return $this->storage->retrieve($id);
+    public function get(string $id = null)
+    {
+        if (isset($id)) {
+            return $this->storage->retrieve($id);
+        } elseif ($this->storage instanceof BulkRetrieverInterface) {
+            return $this->storage->retrieveAll();
+        } else {
+            throw new \Exception(
+                'Neither data for the id, nor storage supporting bulk retrieval found.'
+            );
+        }
     }
-    elseif ($this->storage instanceof BulkRetriever) {
-        return $this->storage->retrieveAll();
-    }
-    else {
-      throw new \Exception(
-        'Neither data for the id, nor storage supporting bulk retrieval found.'
-      );
-    }
-  }
 
   /**
    * Post.
@@ -82,19 +85,20 @@ class Sae {
    * @throws \Exception
    *   If the data is invalid, or could not be stored.
    */
-  public function post(string $json_data): string {
+    public function post(string $json_data): string
+    {
 
-    $validation_info = $this->validate($json_data);
-    if (!$validation_info['valid']) {
-      throw new \Exception(json_encode((object) $validation_info));
-    }
+        $validation_info = $this->validate($json_data);
+        if (!$validation_info['valid']) {
+            throw new \Exception(json_encode((object) $validation_info));
+        }
 
-    $id = NULL;
-    if ($this->idGenerator) {
-      $id = $this->idGenerator->generate();
+        $id = null;
+        if ($this->idGenerator) {
+            $id = $this->idGenerator->generate();
+        }
+        return $this->storage->store($json_data, "{$id}");
     }
-    return $this->storage->store($json_data, "{$id}");
-  }
 
   /**
    * Put.
@@ -111,14 +115,15 @@ class Sae {
    * @throws \Exception
    *   If the data is invalid, or could not be stored.
    */
-  public function put(string $id, string $json_data) {
-    $validation_info = $this->validate($json_data);
-    if (!$validation_info['valid']) {
-      throw new \Exception(json_encode((object) $validation_info));
-    }
+    public function put(string $id, string $json_data)
+    {
+        $validation_info = $this->validate($json_data);
+        if (!$validation_info['valid']) {
+            throw new \Exception(json_encode((object) $validation_info));
+        }
 
-    return $this->storage->store($json_data, "{$id}");
-  }
+        return $this->storage->store($json_data, "{$id}");
+    }
 
   /**
    * Patch.
@@ -135,28 +140,29 @@ class Sae {
    * @throws \Exception
    *   If the data is invalid, or could not be stored.
    */
-  public function patch(string $id, string $json_data) {
-    $json_data_original = $this->storage->retrieve($id);
-    if (!$json_data_original) {
-      return FALSE;
+    public function patch(string $id, string $json_data)
+    {
+        $json_data_original = $this->storage->retrieve($id);
+        if (!$json_data_original) {
+            return false;
+        }
+
+        $data_original = json_decode($json_data_original);
+        $data = json_decode($json_data);
+        $patched = (new Patch())->apply(
+            $data_original,
+            $data
+        );
+
+        $new = json_encode($patched);
+
+        $validation_info = $this->validate($new);
+        if (!$validation_info['valid']) {
+            throw new \Exception(json_encode((object) $validation_info));
+        }
+
+        return $this->storage->store($new, "{$id}");
     }
-
-    $data_original = json_decode($json_data_original);
-    $data = json_decode($json_data);
-    $patched = (new Patch())->apply(
-      $data_original,
-      $data
-    );
-
-    $new = json_encode($patched);
-
-    $validation_info = $this->validate($new);
-    if (!$validation_info['valid']) {
-      throw new \Exception(json_encode((object) $validation_info));
-    }
-
-    return $this->storage->store($new, "{$id}");
-  }
 
   /**
    * Delete.
@@ -167,9 +173,10 @@ class Sae {
    * @return bool
    *   True if the identifier was found and delete, false otherwise.
    */
-  public function delete(string $id) {
-    return $this->storage->remove($id);
-  }
+    public function delete(string $id)
+    {
+        return $this->storage->remove($id);
+    }
 
   /**
    * Validate.
@@ -180,15 +187,15 @@ class Sae {
    * @return array
    *   The validation result.
    */
-  public function validate(string $json_data) {
-    $data = json_decode($json_data);
+    public function validate(string $json_data)
+    {
+        $data = json_decode($json_data);
 
-    $validator = new Validator();
-    $validator->validate($data, json_decode($this->jsonSchema));
+        $validator = new Validator();
+        $validator->validate($data, json_decode($this->jsonSchema));
 
-    $is_valid = $validator->isValid();
+        $is_valid = $validator->isValid();
 
-    return ['valid' => $is_valid, 'errors' => $validator->getErrors()];
-  }
-
+        return ['valid' => $is_valid, 'errors' => $validator->getErrors()];
+    }
 }
