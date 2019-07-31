@@ -1,5 +1,5 @@
 {
-    "name": "fmizzell/sae",
+    "name": "getdkan/sae",
     "description": "Services API Engine",
     "type": "library",
     "autoload": {
