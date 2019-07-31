@@ -4,7 +4,8 @@
     "type": "library",
     "autoload": {
         "psr-4": {
-            "Sae\\": "src/"
+            "Sae\\": "src/",
+            "SaeTest\\": "test/"
         }
     },
     "require": {
