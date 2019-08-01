@@ -1,7 +1,7 @@
 # SAE (Services API Engine)
-![CircleCI (all branches)](https://img.shields.io/circleci/project/github/fmizzell/sae.svg)
-[![Maintainability](https://api.codeclimate.com/v1/badges/3dc320dae5dae90b351a/maintainability)](https://codeclimate.com/github/fmizzell/sae/maintainability)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/3dc320dae5dae90b351a/test_coverage)](https://codeclimate.com/github/fmizzell/sae/test_coverage)
+[![CircleCI](https://circleci.com/gh/GetDKAN/sae.svg?style=svg)](https://circleci.com/gh/GetDKAN/sae)
+[![Maintainability](https://api.codeclimate.com/v1/badges/868c2168abd80a6ff07a/maintainability)](https://codeclimate.com/github/GetDKAN/sae/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/868c2168abd80a6ff07a/test_coverage)](https://codeclimate.com/github/GetDKAN/sae/test_coverage)
 [![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
 
