@@ -10,7 +10,7 @@
     },
     "require": {
         "justinrainbow/json-schema": "^5.2",
-        "fmizzell/contracts": "~0.1.0",
+        "getdkan/contracts": "~0.1.0",
         "stolt/json-merge-patch": "^1.0"
     },
     "require-dev": {
