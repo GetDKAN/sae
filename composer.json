@@ -17,7 +17,7 @@
     },
     "require": {
         "justinrainbow/json-schema": "^5.2",
-        "getdkan/contracts": "dev-loosen-storage-contracts",
+        "getdkan/contracts": "^0.2.0",
         "stolt/json-merge-patch": "^1.0"
     },
     "require-dev": { 
