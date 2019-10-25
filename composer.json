@@ -17,7 +17,7 @@
     },
     "require": {
         "justinrainbow/json-schema": "^5.2",
-        "getdkan/contracts": "^0.2.0",
+        "getdkan/contracts": "^1.0.0",
         "stolt/json-merge-patch": "^1.0"
     },
     "require-dev": { 
