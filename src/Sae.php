@@ -9,6 +9,11 @@ use Contracts\BulkRetrieverInterface;
 use Contracts\StorerInterface;
 use Contracts\RemoverInterface;
 use Contracts\IdGeneratorInterface;
+use Opis\JsonSchema\Schema;
+use Opis\JsonSchema\ValidationResult;
+use OpisErrorPresenter\Implementation\MessageFormatterFactory;
+use OpisErrorPresenter\Implementation\PresentedValidationErrorFactory;
+use OpisErrorPresenter\Implementation\ValidationErrorPresenter;
 use Rs\Json\Merge\Patch;
 
 /**
@@ -191,11 +196,20 @@ class Sae
     {
         $data = json_decode($json_data);
 
-        $validator = new Validator();
-        $validator->validate($data, json_decode($this->jsonSchema));
+        $jsonSchema = Schema::fromJsonString($this->jsonSchema);
+        $validator = new \Opis\JsonSchema\Validator();
 
-        $is_valid = $validator->isValid();
+        /* @var ValidationResult $result */
+        $result = $validator->schemaValidation($data, $jsonSchema, -1);
 
-        return ['valid' => $is_valid, 'errors' => $validator->getErrors()];
+        $presenter = new ValidationErrorPresenter(
+            new PresentedValidationErrorFactory(
+                new MessageFormatterFactory()
+            )
+        );
+
+        $presented = $presenter->present(...$result->getErrors());
+
+        return ['valid' => empty($presented), 'errors' => $presented];
     }
 }

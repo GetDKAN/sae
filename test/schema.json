@@ -1,0 +1,42 @@
+{
+  "title": "Product",
+  "description": "A product from Acme's catalog",
+  "type": "object",
+
+  "properties": {
+
+    "id": {
+      "description": "The unique identifier for a product",
+      "type": "integer"
+    },
+
+    "name": {
+      "description": "Name of the product",
+      "type": "string"
+    },
+
+    "dimensions": {
+      "type": "object",
+      "properties": {
+        "length": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        }
+      },
+      "required": ["length", "width"]
+    },
+
+    "price": {
+      "type": "number",
+      "minimum": 0,
+      "exclusiveMinimum": true
+    }
+  },
+
+  "required": ["id", "name", "price"]
+}
