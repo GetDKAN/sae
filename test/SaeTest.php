@@ -8,51 +8,6 @@ use \Sae\Sae;
 
 class SaeTest extends \PHPUnit\Framework\TestCase
 {
-    private $jsonSchema = '
-    {
-       "$schema": "http://json-schema.org/draft-04/schema#",
-       "title": "Product",
-       "description": "A product from Acme\'s catalog",
-       "type": "object",
-      
-       "properties": {
-      
-          "id": {
-             "description": "The unique identifier for a product",
-             "type": "integer"
-          },
-        
-          "name": {
-             "description": "Name of the product",
-             "type": "string"
-          },
-
-          "dimensions": {
-            "type": "object",
-            "properties": {
-              "length": {
-                "type": "number"
-              },
-              "width": {
-                "type": "number"
-              },
-              "height": {
-                "type": "number"
-              }
-            },
-            "required": [ "length", "width" ]
-          },
-               
-          "price": {
-             "type": "number",
-             "minimum": 0,
-             "exclusiveMinimum": true
-          }
-       },
-      
-       "required": ["id", "name", "price"]
-    }
-    ';
 
     private $defaultJson = '{
       "id": 1,
@@ -69,7 +24,7 @@ class SaeTest extends \PHPUnit\Framework\TestCase
 
     protected function setUp()
     {
-        $this->engine = new Sae(new Memory(), $this->jsonSchema);
+        $this->engine = new Sae(new Memory(), file_get_contents(__DIR__ . '/schema.json'));
         $this->engine->setIdGenerator(new Sequential());
 
       // Start each test with a single product.
@@ -111,7 +66,7 @@ class SaeTest extends \PHPUnit\Framework\TestCase
 
     public function testCannotGetBulkFromUnsupportedStorage()
     {
-        $unsupported_storage_engine = new Sae(new UnsupportedMemory(), $this->jsonSchema);
+        $unsupported_storage_engine = new Sae(new UnsupportedMemory(), file_get_contents(__DIR__ . '/schema.json'));
         $this->expectExceptionMessage('Neither data for the id, nor storage supporting bulk retrieval found.');
         $data = $unsupported_storage_engine->get();
     }
@@ -141,12 +96,10 @@ class SaeTest extends \PHPUnit\Framework\TestCase
     public function testCannotPostInvalidData()
     {
         $this->expectExceptionMessage(
-            '{"valid":false,"errors":[{"property":"id"' .
-            ',"pointer":"\/id","message":"The property id is required","' .
-            'constraint":"required","context":1},{"property":"name","pointer":' .
-            '"\/name","message":"The property name is required","constraint":' .
-            '"required","context":1},{"property":"price","pointer":"\/price",' .
-            '"message":"The property price is required","constraint":"required","context":1}]}'
+            '{"valid":false,"errors":['.
+            '{"keyword":"required","pointer":"","message":"The attribute property \'id\' is required."},' .
+            '{"keyword":"required","pointer":"","message":"The attribute property \'name\' is required."},' .
+            '{"keyword":"required","pointer":"","message":"The attribute property \'price\' is required."}]}'
         );
         $this->assertFalse($this->engine->post("{}"));
     }
@@ -181,10 +134,9 @@ class SaeTest extends \PHPUnit\Framework\TestCase
       "name": "Product missing required properties id and price"
     }';
         $this->expectExceptionMessage(
-            '{"valid":false,"errors":[{"property":"id","pointer":"\/id","message":' .
-            '"The property id is required","constraint":"required","context":1},' .
-            '{"property":"price","pointer":"\/price","message":"The property ' .
-            'price is required","constraint":"required","context":1}]}'
+            '{"valid":false,"errors":[' .
+            '{"keyword":"required","pointer":"","message":"The attribute property \'id\' is required."},' .
+            '{"keyword":"required","pointer":"","message":"The attribute property \'price\' is required."}]}'
         );
         $this->assertFalse($this->engine->put("1", $invalid_json));
     }
@@ -223,8 +175,8 @@ class SaeTest extends \PHPUnit\Framework\TestCase
       "price": null
     }';
         $this->expectExceptionMessage(
-            '{"valid":false,"errors":[{"property":"price","pointer":"\/price",'.
-            '"message":"The property price is required","constraint":"required","context":1}]}'
+            '{"valid":false,"errors":[' .
+            '{"keyword":"required","pointer":"","message":"The attribute property \'price\' is required."}]}'
         );
         $this->engine->patch("1", $json_patch);
     }
